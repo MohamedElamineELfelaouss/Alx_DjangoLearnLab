@@ -1,7 +1,10 @@
-from rest_framework import viewsets, permissions, filters
+from rest_framework import status, viewsets, permissions, filters
 from .models import Post, Comment
 from .serializers import PostSerializer, CommentSerializer
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from accounts.models import CustomUser
 
 
 class IsAuthorOrReadOnly(permissions.BasePermission):
@@ -31,3 +34,24 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+
+class FeedView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+
+        following_users = request.user.following.all()
+
+        posts = Post.objects.filter(author__in=following_users).order_by("-created_at")
+        feed_data = [
+            {
+                "id": post.id,
+                "author": post.author.username,
+                "title": post.title,
+                "content": post.content,
+                "created_at": post.created_at,
+            }
+            for post in posts
+        ]
+        return Response(feed_data, status=status.HTTP_200_OK)
