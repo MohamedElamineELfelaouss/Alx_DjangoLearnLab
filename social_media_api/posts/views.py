@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from accounts.models import CustomUser
 from notifications.models import Notification
 from django.contrib.contenttypes.models import ContentType
+from rest_framework.generics import get_object_or_404
 
 
 class IsAuthorOrReadOnly(permissions.BasePermission):
@@ -63,51 +64,40 @@ class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        try:
-            post = Post.objects.get(pk=pk)
-            like, created = Like.objects.get_or_create(user=request.user, post=post)
+        post = get_object_or_404(Post, pk=pk)  # Fetch or return 404
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
 
-            if not created:
-                return Response(
-                    {"detail": "You have already liked this post."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if not created:
+            return Response(
+                {"detail": "You have already liked this post."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            # Create a notification for the post author
-            Notification.objects.create(
-                recipient=post.author,
-                actor=request.user,
-                verb="liked your post",
-                target=post,
-            )
-            return Response(
-                {"detail": "Post liked successfully."}, status=status.HTTP_200_OK
-            )
-        except Post.DoesNotExist:
-            return Response(
-                {"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        Notification.objects.create(
+            recipient=post.author,
+            actor=request.user,
+            verb="liked your post",
+            target=post,
+        )
+        return Response(
+            {"detail": "Post liked successfully."}, status=status.HTTP_200_OK
+        )
 
 
 class UnlikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        try:
-            post = Post.objects.get(pk=pk)
-            like = Like.objects.filter(user=request.user, post=post)
+        post = get_object_or_404(Post, pk=pk)  # Fetch or return 404
+        like = Like.objects.filter(user=request.user, post=post)
 
-            if not like.exists():
-                return Response(
-                    {"detail": "You have not liked this post."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if not like.exists():
+            return Response(
+                {"detail": "You have not liked this post."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            like.delete()
-            return Response(
-                {"detail": "Post unliked successfully."}, status=status.HTTP_200_OK
-            )
-        except Post.DoesNotExist:
-            return Response(
-                {"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        like.delete()
+        return Response(
+            {"detail": "Post unliked successfully."}, status=status.HTTP_200_OK
+        )
