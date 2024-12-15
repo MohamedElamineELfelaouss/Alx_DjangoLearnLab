@@ -64,8 +64,9 @@ class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        post = get_object_or_404(Post, pk=pk)  # Fetch or return 404
-        like, created = Like.objects.get_or_create(user=request.user, post=post)
+        like, created = Like.objects.get_or_create(
+            user=request.user, post=get_object_or_404(Post, pk=pk)
+        )
 
         if not created:
             return Response(
@@ -88,8 +89,9 @@ class UnlikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        post = get_object_or_404(Post, pk=pk)  # Fetch or return 404
-        like = Like.objects.filter(user=request.user, post=post)
+        like = Like.objects.filter(
+            user=request.user, post=get_object_or_404(Post, pk=pk)
+        )
 
         if not like.exists():
             return Response(
