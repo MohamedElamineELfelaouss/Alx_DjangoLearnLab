@@ -113,7 +113,7 @@ watchdog==5.0.3
 webencodings==0.5.1
 webptools==0.0.9
 websocket-client==1.8.0
-Werkzeug==3.0.2
+Werkzeug==3.0.6
 wheel==0.43.0
 wsproto==1.2.0
 yarl==1.13.1
