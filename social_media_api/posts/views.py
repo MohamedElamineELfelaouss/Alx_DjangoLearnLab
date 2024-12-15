@@ -1,4 +1,4 @@
-from rest_framework import status, viewsets, permissions, filters
+from rest_framework import status, viewsets, permissions, filters, generics
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
 from django_filters.rest_framework import DjangoFilterBackend
@@ -7,7 +7,6 @@ from rest_framework.response import Response
 from accounts.models import CustomUser
 from notifications.models import Notification
 from django.contrib.contenttypes.models import ContentType
-from rest_framework.generics import get_object_or_404
 
 
 class IsAuthorOrReadOnly(permissions.BasePermission):
@@ -64,9 +63,8 @@ class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        like, created = Like.objects.get_or_create(
-            user=request.user, post=get_object_or_404(Post, pk=pk)
-        )
+        post = generics.get_object_or_404(Post, pk=pk)  # Fetch or return 404
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
 
         if not created:
             return Response(
@@ -89,9 +87,8 @@ class UnlikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        like = Like.objects.filter(
-            user=request.user, post=get_object_or_404(Post, pk=pk)
-        )
+        post = generics.get_object_or_404(Post, pk=pk)  # Fetch or return 404
+        like = Like.objects.filter(user=request.user, post=post)
 
         if not like.exists():
             return Response(
